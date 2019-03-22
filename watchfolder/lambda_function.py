@@ -7,12 +7,13 @@ import csv
 import xmltodict
 import datetime
 import calendar
+import urllib3
 
 # This function is a proof of concept and should not be used for production
 # Never share your API Key or Secret. These can not be regenerated
 
 def lambda_handler(event, context):
-    #define S3 & AWS params
+    #define S3, SQS & AWS params
     s3 = boto3.resource('s3')
     s3Client = boto3.client('s3')
     bucket_name = event['Records'][0]['s3']['bucket']['name'];
@@ -21,10 +22,14 @@ def lambda_handler(event, context):
     file_type = key.split(".")[1]
     bucket_url = f"https://s3.us-east-2.amazonaws.com/{bucket_name}/"
     
+    # SQS Config
+    sqs = boto3.client('sqs')
+    queue_url = 'https://sqs.us-east-2.amazonaws.com/399317258909/accu-jw-poll'
+    
     # Key & secret for JW Platform API calls
     # Configurations
-    vkey = 'ltPPjVCZ'
-    vsecret = 'aCCDRZjIGQhY33roEGD2INSX'
+    vkey = ''
+    vsecret = ''
     
     # Define JW Player
     
@@ -46,7 +51,6 @@ def lambda_handler(event, context):
              
         jsonString = json.dumps(xmltodict.parse(dc, process_namespaces=True))
         return json.loads(jsonString)
-        
         
     def checkForFile(file, bucket):
         # try to hit this the file with a HEAD request
@@ -87,8 +91,13 @@ def lambda_handler(event, context):
         query_parameters = response['link']['query']
         query_parameters['api_format'] = "json"
         
-        cap_file = publicUrl(captions_file_path)
-        files = {'file': cap_file}
+        http = urllib3.PoolManager()
+
+        url = publicUrl(captions_file_path)
+        response = http.request('GET', url)
+        f = response.data
+        
+        files = {'file': f}
         r = requests.post(upload_url, params=query_parameters, files=files)
         
         return r    
@@ -99,6 +108,16 @@ def lambda_handler(event, context):
         get_media_key = jwplatform_client.videos.list(**search_params)
         
         return get_media_key['videos'][0]['key']
+        
+    def sendSQS(queue_url, media_id):
+        response = sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=(
+                media_id
+            )
+        )
+        
+        return response
     
     #check if the file is an mp4 or not
     if file_type == "mp4":
@@ -211,13 +230,16 @@ def lambda_handler(event, context):
         elif update_asset and update_asset == 2:
             
             media_object['update_file'] = True
-            media_object['video_key'] = getKeyFromHashCode(media_object['custom.hash_code'])
+            jw_media_id = getKeyFromHashCode(media_object['custom.hash_code'])
+            media_object['video_key'] = jw_media_id
             video_file = data_file_path["publisher-upload-manifest"]["reencode-from-new-source"]["@new-source-refid"]
             media_object['download_url'] = publicUrl(video_file)
             media_object['update_file'] = True
             
             api_response = jwplatform_client.videos.update(**media_object)
-            return api_response
+            
+            if api_response['status'] == "ok":
+                sendSQS(queue_url, jw_media_id)
             
         # 3 = update & create new
         else:
@@ -230,7 +252,10 @@ def lambda_handler(event, context):
             video_file = data_file_path["publisher-upload-manifest"]["reencode-from-new-source"]["@new-source-refid"]
             media_object['download_url'] = publicUrl(video_file)
             media_object['update_file'] = True
-            media_object['video_key'] = getKeyFromHashCode(media_object['custom.hash_code'])
+            jw_media_id = getKeyFromHashCode(media_object['custom.hash_code'])
+            media_object['video_key'] = jw_media_id
             
             api_update_response = jwplatform_client.videos.update(**media_object)
-            return api_response
+            
+            if api_update_response['status'] == "ok":
+                sendSQS(queue_url, jw_media_id)
