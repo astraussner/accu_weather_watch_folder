@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding= "UTF-8" ?>
+<tt xml:lang="en" xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/2006/04/ttaf1#styling">
+<head>
+  <styling>
+    <style xml:id= "defaultCaption"
+      tts:fontSize= "12"
+      tts:fontFamily= "sansSerif"
+      tts:fontWeight= "normal"
+      tts:fontStyle= "normal"
+      tts:color= "white"
+      tts:backgroundColor= "black"
+      tts:showBackground= "always"
+      tts:textAlign= "left"
+    />
+
+    <style xml:id= "styleTwo"
+      tts:fontFamily= "serif"
+      tts:color= "blue"
+    />
+
+    <style xml:id= "styleThree"
+      tts:color= "black"
+      tts:backgroundColor= "white"
+      tts:fontStyle= "italic"
+    />
+
+    <style xml:id= "styleFour" style= "styleTwo"
+      tts:textOutline= "red 2px 0px"
+    />
+
+    <style xml:id= "styleFive" style= "styleTwo"
+      tts:color= "red"
+      tts:fontWeight= "bold"
+    />
+
+  </styling>
+</head>
+<body xml:id= "thebody">
+  <div style= "defaultCaption" xml:lang= "en">
+    <p begin= "0:00:00.00" end= "0:00:04.00">This is my 1st caption</p>
+    <p begin= "0:00:05.00" end= "0:00:09.00" style= "styleTwo">This is my 2nd caption</p>
+    <p begin= "0:00:10.00" end= "0:00:14.00" style= "styleThree">This is my 3rd caption</p>
+    <p begin= "0:00:15.00" end= "0:00:19.00" style= "styleFour">This is my 4th caption</p>
+    <p begin= "0:00:20.00" end= "0:00:24.00">This is my 5th caption
+      <span style= "styleFive">This is a sub-caption</span>
+    </p>
+    <p begin= "0:00:25.00" end= "0:00:29.00">This is my 6th caption</p>
+    <p begin= "0:00:25.00" end= "0:00:29.00" style= "styleTwo">This is my 7th caption</p>
+  </div>
+  <div style= "defaultCaption" xml:lang= "fr">
+    <p begin= "0:00:00.00" end= "0:00:34.00">Bonjour</p>
+  </div>
+</body>
+</tt>    
