@@ -24,6 +24,7 @@ def lambda_handler(event, context):
     # set rate limit to 40, don't want to stall any other processes
     new_messages = True
     min_rate_limit = 40
+    thumb_position = 3
 
     # Check if there are messages in the response
     while new_messages and min_rate_limit >= 40:
@@ -44,7 +45,7 @@ def lambda_handler(event, context):
             api_response = jwplatform_client.videos.show(video_key=jw_media_id)
             
             if api_response['video']['status'] == "ready" and min_rate_limit >= 40:
-                thumb_response = jwplatform_client.videos.thumbnails.update(video_key=jw_media_id,position=3)
+                thumb_response = jwplatform_client.videos.thumbnails.update(video_key=jw_media_id,position=thumb_position)
                 min_rate_limit = thumb_response['rate_limit']['remaining']
                 
                 if thumb_response['status'] == "ok":
